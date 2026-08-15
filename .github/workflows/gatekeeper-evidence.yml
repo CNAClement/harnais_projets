@@ -1,0 +1,55 @@
+name: Gatekeeper Evidence Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  evidence-gate:
+    name: evidence-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate evidence fields and gatekeeper labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || "";
+            const labels = (pr.labels || []).map(l => l.name);
+
+            const requiredEvidence = [
+              "EVIDENCE_CHANGELOG",
+              "EVIDENCE_TESTS",
+              "EVIDENCE_RUNTIME",
+              "EVIDENCE_DOCS",
+            ];
+
+            const missingEvidence = requiredEvidence.filter((key) => {
+              const re = new RegExp(`^${key}:\\s*OK\\s*$`, "mi");
+              return !re.test(body);
+            });
+
+            const hasBlocked = labels.includes("gatekeeper:blocked");
+            const hasApproved = labels.includes("gatekeeper:approved");
+
+            const failures = [];
+            if (missingEvidence.length) {
+              failures.push(`Missing or non-OK evidence markers: ${missingEvidence.join(", ")}`);
+            }
+            if (hasBlocked) {
+              failures.push("Label gatekeeper:blocked is present");
+            }
+            if (!hasApproved) {
+              failures.push("Label gatekeeper:approved is missing");
+            }
+
+            if (failures.length) {
+              core.setFailed(`Gatekeeper evidence check failed: ${failures.join(" | ")}`);
+              return;
+            }
+
+            core.notice("Gatekeeper evidence check passed.");
