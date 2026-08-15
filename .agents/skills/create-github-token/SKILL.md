@@ -30,6 +30,11 @@ Automatise la creation de tokens GitHub au maximum, avec une seule intervention 
 
 Si un de ces points manque, demander uniquement la precision bloquante.
 
+Avant de creer le token `fix-issue`, inspecter le repo cible:
+
+- si le repo contient des fichiers sous `.github/workflows/` qui devront etre pousses avec ce token, basculer immediatement sur la variante `fix-issue + workflows`.
+- ne pas decouvrir ce besoin plus tard apres un push rate si le depot local est deja disponible pour inspection.
+
 ## Nommage standardise
 
 Deriver `REPO_KEY` en majuscules avec underscores a partir du repo (`harnais_projets` -> `HARNAIS_PROJETS`).
@@ -90,6 +95,17 @@ Compatibilite historique attendue:
 - equivalent a `GITHUB_TOKEN_FIX_ISSUE`
 - vue GitHub: "Read and Write access to code, issues, and pull requests"
 
+Extension conditionnelle:
+
+- si le repo contient deja des fichiers sous `.github/workflows/` et que le token doit pousser ces fichiers (cas typique: premier push d'initialisation vers un repo distant vide), ajouter aussi:
+  - `Workflows: Read and write`
+
+Pourquoi:
+
+- GitHub refuse la creation ou mise a jour de fichiers workflow par git avec un PAT qui n'a pas `workflows:write`, meme si `contents:write` est deja present.
+- cette extension n'est pas necessaire pour tous les repos; n'ajouter `workflows:write` que quand le flux reel en a besoin.
+- pour `harnais_projets`, cette extension est necessaire des le premier push car le repo versionne deja `.github/workflows/gatekeeper-evidence.yml`.
+
 ### 3) Token classic `agentic-bh`
 
 But: execution agentique sur compte dedie de validation/separation des responsabilites.
@@ -116,6 +132,10 @@ PAT fine-grained (`fix-issue`):
 
 `https://github.com/settings/personal-access-tokens/new?name=<repo>-fix-issue&description=Token%20fine-grained%20pour%20developper%20et%20ouvrir%20des%20PR%20sur%20<owner>%2F<repo>&target_name=<owner>&expires_in=<days>&contents=write&pull_requests=write&issues=write`
 
+PAT fine-grained (`fix-issue` + workflows):
+
+`https://github.com/settings/personal-access-tokens/new?name=<repo>-fix-issue&description=Token%20fine-grained%20pour%20developper%20et%20ouvrir%20des%20PR%20sur%20<owner>%2F<repo>&target_name=<owner>&expires_in=<days>&contents=write&pull_requests=write&issues=write&workflows=write`
+
 Token classic (`agentic-bh`):
 
 `https://github.com/settings/tokens/new?description=<repo>-agentic-bh&expires_in=<days>&scopes=repo`
@@ -135,6 +155,7 @@ Conclusion:
 - il faut minimiser l'intervention utilisateur,
 - mais il faut accepter un petit pont local explicite pour faire sortir le token du navigateur vers l'environnement de travail.
 - et prevoir un fallback ou l'utilisateur ne fait qu'un clic `Generate token` puis `Copy token` quand GitHub bloque ce dernier clic automatise.
+- il ne faut jamais promettre un `Generate token` 100% autonome tant que le navigateur integre reste instable sur ce bouton.
 
 ### B. Automatiser dans le navigateur
 
@@ -151,6 +172,11 @@ Conclusion:
    - `Generate token`
    - `Copy token`
    puis reprendre automatiquement la suite via le pont local.
+
+Important:
+
+- le fallback humain attendu doit rester minimal et explicite.
+- pour un token donne, ne demander ni navigation complexe, ni edition manuelle de fichier, ni copier/coller du secret dans le chat.
 
 ### C. Recuperer la valeur du token avec intervention minimale
 
