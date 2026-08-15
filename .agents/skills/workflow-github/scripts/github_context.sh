@@ -37,7 +37,7 @@ github_repo_key() {
   printf '%s\n' "$name" | tr '[:lower:]-' '[:upper:]_'
 }
 
-github_repo_token_var() {
+github_repo_token_candidates() {
   local requested repo_key
   requested=${1:-}
   [[ -n "$requested" ]] || return 1
@@ -53,6 +53,7 @@ github_repo_token_var() {
       printf '%s_GITHUB_FIX_ISSUE\n' "$repo_key"
       ;;
     GITHUB_TOKEN_PR_REVIEW)
+      printf '%s_GITHUB_PR_REVIEW\n' "$repo_key"
       printf '%s_GITHUB_AGENTIC_BH\n' "$repo_key"
       ;;
     *)
@@ -61,26 +62,52 @@ github_repo_token_var() {
   esac
 }
 
-github_auth() {
-  local token_var repo_token_var token
+github_repo_token_var() {
+  github_repo_token_candidates "$1" 2>/dev/null | head -n 1
+}
+
+github_resolve_token_value() {
+  local token_var repo_token_var token repo_key
   token_var=${1:-}
-  [[ -n "$token_var" ]] || { echo "Usage: github_auth <token-var>" >&2; return 1; }
+  [[ -n "$token_var" ]] || { echo "Usage: github_resolve_token_value <token-var>" >&2; return 1; }
 
   github_load_env_file
-  repo_token_var=$(github_repo_token_var "$token_var" 2>/dev/null || true)
   token=${!token_var:-}
-  if [[ -z "$token" && -n "$repo_token_var" ]]; then
-    token=${!repo_token_var:-}
+  if [[ -z "$token" ]]; then
+    while IFS= read -r repo_token_var; do
+      [[ -n "$repo_token_var" ]] || continue
+      token=${!repo_token_var:-}
+      [[ -n "$token" ]] && break
+    done < <(github_repo_token_candidates "$token_var" 2>/dev/null || true)
   fi
   token=${token:-${GITHUB_TOKEN:-}}
   [[ -n "$token" ]] || {
-    if [[ -n "$repo_token_var" ]]; then
-      echo "GitHub token missing: define $token_var or $repo_token_var in env_perso.env, or export GITHUB_TOKEN." >&2
-    else
-      echo "GitHub token missing: define $token_var in env_perso.env or export GITHUB_TOKEN." >&2
-    fi
+    case "$token_var" in
+      GITHUB_TOKEN_PR_REVIEW)
+        repo_key=$(github_repo_key 2>/dev/null || printf '<REPO_KEY>')
+        echo "GitHub token missing: define $token_var, ${repo_key}_GITHUB_PR_REVIEW, or ${repo_key}_GITHUB_AGENTIC_BH in env_perso.env, or export GITHUB_TOKEN." >&2
+        ;;
+      *)
+        repo_token_var=$(github_repo_token_var "$token_var" 2>/dev/null || true)
+        if [[ -n "$repo_token_var" ]]; then
+          echo "GitHub token missing: define $token_var or $repo_token_var in env_perso.env, or export GITHUB_TOKEN." >&2
+        else
+          echo "GitHub token missing: define $token_var in env_perso.env or export GITHUB_TOKEN." >&2
+        fi
+        ;;
+    esac
     return 1
   }
+
+  printf '%s' "$token"
+}
+
+github_auth() {
+  local token_var token
+  token_var=${1:-}
+  [[ -n "$token_var" ]] || { echo "Usage: github_auth <token-var>" >&2; return 1; }
+
+  token=$(github_resolve_token_value "$token_var") || return 1
 
   export GITHUB_TOKEN="$token"
   gh auth status >/dev/null 2>&1 || printf '%s' "$GITHUB_TOKEN" | gh auth login --with-token
