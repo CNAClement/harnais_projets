@@ -37,4 +37,18 @@ Each skill keeps its dedicated token name:
 - `GITHUB_TOKEN_FIX_ISSUE`
 - `GITHUB_TOKEN_PR_REVIEW`
 
-The helper loads `env_perso.env` from the project root when present. If the dedicated token is absent but `GITHUB_TOKEN` is already exported, it reuses that value.
+The helper loads `env_perso.env` from the project root when present.
+
+It first checks the dedicated generic variable, then the repo-scoped variable derived from the current repository name:
+
+- `<REPO_KEY>_GITHUB_ISSUE_CREATE`
+- `<REPO_KEY>_GITHUB_FIX_ISSUE`
+- `<REPO_KEY>_GITHUB_AGENTIC_BH`
+
+Example on `CNAClement/harnais_projets`:
+
+- `HARNAIS_PROJETS_GITHUB_ISSUE_CREATE`
+- `HARNAIS_PROJETS_GITHUB_FIX_ISSUE`
+- `HARNAIS_PROJETS_GITHUB_AGENTIC_BH`
+
+If neither is defined but `GITHUB_TOKEN` is already exported, it reuses that value.

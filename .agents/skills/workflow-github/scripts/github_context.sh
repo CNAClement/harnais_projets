@@ -23,15 +23,62 @@ github_load_env_file() {
   GITHUB_SKILL_ENV_LOADED=1
 }
 
+github_repo_key() {
+  local repo name
+
+  if [[ -n "${GITHUB_REPO:-}" ]]; then
+    repo=$GITHUB_REPO
+  else
+    repo=$(github_resolve_repo 2>/dev/null || true)
+  fi
+
+  name=${repo##*/}
+  [[ -n "$name" ]] || return 1
+  printf '%s\n' "$name" | tr '[:lower:]-' '[:upper:]_'
+}
+
+github_repo_token_var() {
+  local requested repo_key
+  requested=${1:-}
+  [[ -n "$requested" ]] || return 1
+
+  repo_key=$(github_repo_key 2>/dev/null || true)
+  [[ -n "$repo_key" ]] || return 1
+
+  case "$requested" in
+    GITHUB_TOKEN_ISSUE_CREATE)
+      printf '%s_GITHUB_ISSUE_CREATE\n' "$repo_key"
+      ;;
+    GITHUB_TOKEN_FIX_ISSUE)
+      printf '%s_GITHUB_FIX_ISSUE\n' "$repo_key"
+      ;;
+    GITHUB_TOKEN_PR_REVIEW)
+      printf '%s_GITHUB_AGENTIC_BH\n' "$repo_key"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 github_auth() {
-  local token_var token
+  local token_var repo_token_var token
   token_var=${1:-}
   [[ -n "$token_var" ]] || { echo "Usage: github_auth <token-var>" >&2; return 1; }
 
   github_load_env_file
-  token=${!token_var:-${GITHUB_TOKEN:-}}
+  repo_token_var=$(github_repo_token_var "$token_var" 2>/dev/null || true)
+  token=${!token_var:-}
+  if [[ -z "$token" && -n "$repo_token_var" ]]; then
+    token=${!repo_token_var:-}
+  fi
+  token=${token:-${GITHUB_TOKEN:-}}
   [[ -n "$token" ]] || {
-    echo "GitHub token missing: define $token_var in env_perso.env or export GITHUB_TOKEN." >&2
+    if [[ -n "$repo_token_var" ]]; then
+      echo "GitHub token missing: define $token_var or $repo_token_var in env_perso.env, or export GITHUB_TOKEN." >&2
+    else
+      echo "GitHub token missing: define $token_var in env_perso.env or export GITHUB_TOKEN." >&2
+    fi
     return 1
   }
 
