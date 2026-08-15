@@ -39,16 +39,23 @@ Each skill keeps its dedicated token name:
 
 The helper loads `env_perso.env` from the project root when present.
 
-It first checks the dedicated generic variable, then the repo-scoped variable derived from the current repository name:
+It first checks the dedicated generic variable, then the repo-scoped variable derived from the current repository name.
+
+Preferred repo-scoped names:
 
 - `<REPO_KEY>_GITHUB_ISSUE_CREATE`
 - `<REPO_KEY>_GITHUB_FIX_ISSUE`
+- `<REPO_KEY>_GITHUB_PR_REVIEW`
+
+Legacy compatibility alias kept for review flows:
+
 - `<REPO_KEY>_GITHUB_AGENTIC_BH`
 
 Example on `CNAClement/harnais_projets`:
 
 - `HARNAIS_PROJETS_GITHUB_ISSUE_CREATE`
 - `HARNAIS_PROJETS_GITHUB_FIX_ISSUE`
-- `HARNAIS_PROJETS_GITHUB_AGENTIC_BH`
+- `HARNAIS_PROJETS_GITHUB_PR_REVIEW`
+- `HARNAIS_PROJETS_GITHUB_AGENTIC_BH` (legacy alias still accepted)
 
 If neither is defined but `GITHUB_TOKEN` is already exported, it reuses that value.

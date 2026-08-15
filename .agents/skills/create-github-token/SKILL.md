@@ -43,6 +43,10 @@ Variables d'environnement standard:
 
 - `${REPO_KEY}_GITHUB_ISSUE_CREATE`
 - `${REPO_KEY}_GITHUB_FIX_ISSUE`
+- `${REPO_KEY}_GITHUB_PR_REVIEW`
+
+Alias legacy encore acceptes pour la review:
+
 - `${REPO_KEY}_GITHUB_AGENTIC_BH`
 
 Exemple:
@@ -246,7 +250,8 @@ Le helper GitHub du depot sait maintenant reutiliser:
 
 Donc remplir a la fois:
 
-- les variables repo-scoped,
+- les variables repo-scoped preferees,
+- l'alias legacy repo-scoped de review pour compatibilite,
 - les alias generiques encore attendus par certains skills.
 
 ## Mise a jour de `env_perso.env`
@@ -258,6 +263,7 @@ Exemple pour `harnais_projets`:
 ```dotenv
 HARNAIS_PROJETS_GITHUB_ISSUE_CREATE=<token_pat_issue_create>
 HARNAIS_PROJETS_GITHUB_FIX_ISSUE=<token_pat_fix_issue>
+HARNAIS_PROJETS_GITHUB_PR_REVIEW=<token_classic_agentic_bh>
 HARNAIS_PROJETS_GITHUB_AGENTIC_BH=<token_classic_agentic_bh>
 ```
 
@@ -280,6 +286,7 @@ Si possible, remplir aussi les variables repo-scoped suivantes:
 ```dotenv
 HARNAIS_PROJETS_GITHUB_ISSUE_CREATE=<token_pat_issue_create>
 HARNAIS_PROJETS_GITHUB_FIX_ISSUE=<token_pat_fix_issue>
+HARNAIS_PROJETS_GITHUB_PR_REVIEW=<token_classic_agentic_bh>
 HARNAIS_PROJETS_GITHUB_AGENTIC_BH=<token_classic_agentic_bh>
 ```
 
